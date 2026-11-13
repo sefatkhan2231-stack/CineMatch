@@ -75,6 +75,8 @@ export const movieApi = {
   search: (query, limit = 12) =>
     apiRequest(`/movies/search?q=${encodeURIComponent(query)}&limit=${limit}`),
 
+  get: (movieId) => apiRequest(`/movies/${movieId}`),
+
   similar: (movieId, limit = 12) =>
     apiRequest(`/movies/${movieId}/similar?limit=${limit}`),
 

@@ -32,7 +32,7 @@ from backend.app.schemas.auth import UserRegister, UserLogin
 from backend.app.services.auth_service import register_user, login_user
 
 from backend.app.core.dependencies import get_current_user
-from backend.app.database.models import User
+from backend.app.database.models import Movie, User
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_DIR = PROJECT_ROOT / "ml" / "artifacts"
@@ -117,20 +117,67 @@ def get_movie(
 
     return movie
 
-@app.get('/movies/{movie_id}/similar')
+
+@app.get("/movies/{movie_id}/similar")
 def get_similar_movies(
-    movie_id: str,
-    limit: int = Query(10, ge=1, le=50)
+    movie_id: int,
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
 ):
     try:
-        results = service.similar_movies(movie_id, limit=limit)
-        return {
-            'movie_id': movie_id,
-            'count': len(results),
-            'results': results,
+        # 1. Calculate similarity using ML artifacts
+        similar_results = service.similar_movies(
+            str(movie_id),
+            limit=limit,
+        )
+
+        # 2. Extract recommended movie IDs
+        movie_ids = [
+            item["movie_id"] for item in similar_results
+        ]
+
+        # 3. Fetch movie details from PostgreSQL
+        movies = (
+            db.query(Movie)
+            .filter(Movie.movie_id.in_(movie_ids))
+            .all()
+        )
+
+        # 4. Create a lookup dictionary
+        movie_lookup = {
+            movie.movie_id: movie for movie in movies
         }
+
+        # 5. Combine database details with similarity scores
+        results = []
+
+        for item in similar_results:
+            movie = movie_lookup.get(item["movie_id"])
+
+            if movie is None:
+                continue
+
+            results.append({
+                "movie_id": movie.movie_id,
+                "title": movie.title,
+                "genres": movie.genres,
+                "release_date": movie.release_date,
+                "poster_url": movie.poster_url,
+                "similarity": item["similarity"],
+            })
+
+        return {
+            "movie_id": movie_id,
+            "count": len(results),
+            "results": results,
+        }
+
     except ValueError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
 
 @app.post('/ratings')
 def create_rating(

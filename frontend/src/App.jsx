@@ -6,7 +6,6 @@ import {
   Play,
   Search,
   Sparkles,
-  Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import "./App.css";
@@ -19,8 +18,10 @@ import {
 } from "./services/api";
 
 import Auth from "./components/Auth";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import Logo from "./components/Logo";
+import MovieCard from "./components/MovieCard";
+import MovieDetail from "./components/MovieDetail";
+import Profile from "./components/Profile";
 
 function getReleaseYear(releaseDate) {
   if (!releaseDate) return "MOVIE";
@@ -30,67 +31,17 @@ function getReleaseYear(releaseDate) {
   return match ? match[0] : "MOVIE";
 }
 
-function MovieCard({ movie, onSelect }) {
-  const [posterFailed, setPosterFailed] = useState(false);
-
-  return (
-    <button
-      className="movie-card"
-      onClick={() => onSelect(movie)}
-      title={`Find movies similar to ${movie.title}`}
-    >
-      <div className="movie-poster">
-        {movie.poster_url && !posterFailed ? (
-          <img
-            src={movie.poster_url}
-            alt={`${movie.title} poster`}
-            loading="lazy"
-            onError={() => setPosterFailed(true)}
-          />
-        ) : (
-          <>
-            <Film size={38} strokeWidth={1.3} />
-            <span className="poster-label">CINEMATCH</span>
-          </>
-        )}
-
-        <span className="movie-year">{getReleaseYear(movie.release_date)}</span>
-      </div>
-
-      <div className="movie-info">
-        <h3>{movie.title}</h3>
-
-        <p>{(movie.genres || []).slice(0, 3).join(" · ") || "Discover"}</p>
-
-        {movie.recommendation_score != null && (
-          <span className="rating">
-            <Sparkles size={13} />
-            {Number(movie.recommendation_score).toFixed(2)} match score
-          </span>
-        )}
-
-        {movie.predicted_rating != null && (
-          <span className="rating">
-            <Star size={13} fill="currentColor" />
-            {Number(movie.predicted_rating).toFixed(1)} predicted
-          </span>
-        )}
-      </div>
-    </button>
-  );
-}
-
 function App() {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [similarMovies, setSimilarMovies] = useState([]);
-  const [selectedMovie, setSelectedMovie] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   const [user, setUser] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
+  const [activeMovieId, setActiveMovieId] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     async function checkSession() {
@@ -116,26 +67,21 @@ function App() {
     checkSession();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-
-    async function loadRecommendations() {
-      setLoading(true);
-      setError("");
-      setSearched(false);
-      setSelectedMovie(null);
-
-      try {
-        const data = await movieApi.recommendations(12);
-        setRecommendations(data.results || []);
-      } catch (err) {
-        setError(err.message || "Could not load recommendations.");
-      } finally {
-        setLoading(false);
-      }
+  async function loadRecommendations() {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await movieApi.recommendations(12);
+      setRecommendations(data.results || []);
+    } catch (err) {
+      setError(err.message || "Could not load recommendations.");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadRecommendations();
+  useEffect(() => {
+    if (user) loadRecommendations();
   }, [user]);
 
   function handleLogout() {
@@ -144,22 +90,32 @@ function App() {
     setUser(null);
     setRecommendations([]);
     setSearchResults([]);
-    setSimilarMovies([]);
-    setSelectedMovie(null);
+    setActiveMovieId(null);
     setSearched(false);
+    setShowProfile(false);
     setQuery("");
     setError("");
+  }
+
+  function openMovie(movieOrId) {
+    const id = typeof movieOrId === "object" ? movieOrId.movie_id : movieOrId;
+    setActiveMovieId(id);
+  }
+
+  function closeMovie() {
+    setActiveMovieId(null);
+    if (!searched && !showProfile) loadRecommendations(); // CHANGED
   }
 
   async function searchMovies(event) {
     event.preventDefault();
     if (!query.trim()) return;
 
+    setActiveMovieId(null);
     setLoading(true);
     setError("");
     setRecommendations([]);
-    setSimilarMovies([]);
-    setSelectedMovie(null);
+    setShowProfile(false);
     setSearched(true);
 
     try {
@@ -172,36 +128,23 @@ function App() {
     }
   }
 
-  async function findSimilar(movie) {
-    setLoading(true);
-    setError("");
-    setSelectedMovie(movie);
-    setSearchResults([]);
-    setRecommendations([]);
-    setSimilarMovies([]);
+  function goHome() {
+    setActiveMovieId(null);
     setSearched(false);
-
-    try {
-      const data = await movieApi.similar(movie.movie_id, 12);
-      setSimilarMovies(data.results || []);
-    } catch (err) {
-      setError(err.message || "Could not load similar movies.");
-    } finally {
-      setLoading(false);
-    }
+    setQuery("");
+    loadRecommendations();
+    setShowProfile(false);
   }
 
-  const visibleMovies = searched
-    ? searchResults
-    : selectedMovie
-      ? similarMovies
-      : recommendations;
+  function openProfile() {
+    setActiveMovieId(null);
+    setShowProfile(true);
+  }
 
+  const visibleMovies = searched ? searchResults : recommendations;
   const sectionTitle = searched
     ? `Search results for "${query}"`
-    : selectedMovie
-      ? `Movies similar to ${selectedMovie.title}`
-      : "Recommended for you";
+    : "Recommended for you";
 
   if (authChecking) {
     return (
@@ -221,18 +164,14 @@ function App() {
   return (
     <div className="app-shell">
       <header className="navbar">
-        <a href="#home" className="brand">
-          <span className="brand-icon">
-            <Clapperboard size={23} />
-          </span>
-          <span>
-            CINE<span className="brand-accent">MATCH</span>
-          </span>
+        <a href="#home" className="brand" onClick={goHome}>
+          <Logo />
         </a>
 
         <nav>
-          <a href="#home">Discover</a>
-          <a href="#movies">Movies</a>
+          <a href="#home" onClick={openProfile}>
+            My Library
+          </a>
         </nav>
 
         <form className="search-form" onSubmit={searchMovies}>
@@ -258,110 +197,131 @@ function App() {
       </header>
 
       <main id="home">
-        <section className="hero">
-          <div className="hero-content">
-            <div className="eyebrow">
-              <Sparkles size={15} />
-              YOUR PERSONAL MOVIE UNIVERSE
-            </div>
+        {activeMovieId ? (
+          <MovieDetail
+            movieId={activeMovieId}
+            onBack={closeMovie}
+            onSelectMovie={openMovie}
+          />
+        ) : showProfile ? (
+          <Profile user={user} onOpenMovie={openMovie} />
+        ) : (
+          <>
+            {
+              <section className="hero">
+                <div className="hero-content">
+                  <div className="eyebrow">
+                    <Sparkles size={15} />
+                    YOUR PERSONAL MOVIE UNIVERSE
+                  </div>
 
-            <h1>
-              Every movie has
-              <br />
-              <span>a match.</span>
-            </h1>
+                  <h1>
+                    Every movie has
+                    <br />
+                    <span>a match.</span>
+                  </h1>
 
-            <p>
-              Discover your next favorite film with recommendations powered by
-              machine learning.
-            </p>
+                  <p>
+                    Discover your next favorite film with recommendations
+                    powered by machine learning.
+                  </p>
 
-            <a className="hero-button" href="#movies">
-              <Play size={17} fill="currentColor" />
-              Explore movies
-            </a>
-          </div>
+                  <a className="hero-button" href="#movies">
+                    <Play size={17} fill="currentColor" />
+                    Explore movies
+                  </a>
+                </div>
 
-          <div className="hero-art" aria-hidden="true">
-            <div className="orbit orbit-one" />
-            <div className="orbit orbit-two" />
-            <div className="hero-film">
-              <Clapperboard size={100} />
-            </div>
-            <span className="floating-star star-one">✦</span>
-            <span className="floating-star star-two">✧</span>
-            <span className="floating-star star-three">✦</span>
-          </div>
+                <div className="hero-art" aria-hidden="true">
+                  <div className="orbit orbit-one" />
+                  <div className="orbit orbit-two" />
+                  <div className="hero-film">
+                    <Clapperboard size={100} />
+                  </div>
+                  <span className="floating-star star-one">✦</span>
+                  <span className="floating-star star-two">✧</span>
+                  <span className="floating-star star-three">✦</span>
+                </div>
 
-          <div className="hero-bottom">
-            <span>DISCOVER DIFFERENTLY</span>
-            <span>100K RATINGS · 1,682 MOVIES</span>
-          </div>
-        </section>
+                <div className="hero-bottom">
+                  <span>DISCOVER DIFFERENTLY</span>
+                  <span>100K RATINGS · 1,682 MOVIES</span>
+                </div>
+              </section>
+            }
 
-        <section className="movie-section" id="movies">
-          <div className="section-heading">
-            <div>
-              <span className="section-kicker">
-                {searched
-                  ? "SEARCH"
-                  : selectedMovie
-                    ? "DISCOVER MORE"
-                    : "PERSONALIZED FOR YOU"}
-              </span>
-              <h2>{sectionTitle}</h2>
-            </div>
-            <span className="result-count">
-              {visibleMovies.length}{" "}
-              {visibleMovies.length === 1 ? "movie" : "movies"}
-            </span>
-          </div>
+            {
+              <section className="movie-section" id="movies">
+                <div className="section-heading">
+                  <div>
+                    <span className="section-kicker">
+                      {searched ? "SEARCH" : "PERSONALIZED FOR YOU"}
+                    </span>
+                    <h2>{sectionTitle}</h2>
+                  </div>
+                  <span className="result-count">
+                    {visibleMovies.length}{" "}
+                    {visibleMovies.length === 1 ? "movie" : "movies"}
+                  </span>
+                </div>
 
-          {loading && (
-            <div className="status-message">
-              <LoaderCircle className="spinner" size={28} />
-              <p>Finding your next favorite...</p>
-            </div>
-          )}
+                {loading && (
+                  <div className="status-message">
+                    <LoaderCircle className="spinner" size={28} />
+                    <p>Finding your next favorite...</p>
+                  </div>
+                )}
 
-          {!loading && error && (
-            <div className="status-message error-message">
-              <AlertCircle size={25} />
-              <p>{error}</p>
-            </div>
-          )}
+                {!loading && error && (
+                  <div className="status-message error-message">
+                    <AlertCircle size={25} />
+                    <p>{error}</p>
+                  </div>
+                )}
 
-          {!loading && !error && visibleMovies.length > 0 && (
-            <div className="movie-grid">
-              {visibleMovies.map((movie) => (
-                <MovieCard
-                  key={movie.movie_id}
-                  movie={movie}
-                  onSelect={findSimilar}
-                />
-              ))}
-            </div>
-          )}
+                {!loading && !error && visibleMovies.length > 0 && (
+                  <div className="movie-grid">
+                    {visibleMovies.map((movie) => (
+                      <MovieCard
+                        key={movie.movie_id}
+                        movie={movie}
+                        onSelect={openMovie}
+                      />
+                    ))}
+                  </div>
+                )}
 
-          {!loading && !error && visibleMovies.length === 0 && (
-            <div className="empty-state">
-              <Film size={34} />
-              <h3>{searched ? "No movies found" : "No movies to show yet"}</h3>
-              <p>
-                {searched
-                  ? "Try another title, such as Toy Story, Star Wars, or Batman."
-                  : "Search for a movie to start discovering."}
-              </p>
-            </div>
-          )}
-        </section>
+                {!loading && !error && visibleMovies.length === 0 && (
+                  <div className="empty-state">
+                    <Film size={34} />
+                    <h3>
+                      {searched ? "No movies found" : "No movies to show yet"}
+                    </h3>
+                    <p>
+                      {searched
+                        ? "Try another title, such as Toy Story, Star Wars, or Batman."
+                        : "Search for a movie to start discovering."}
+                    </p>
+                  </div>
+                )}
+              </section>
+            }
+          </>
+        )}
 
         <footer className="footer">
           <a href="#home" className="footer-brand">
-            CINEMATCH
+            <Logo />
           </a>
+
           <p>Built with React, FastAPI, and machine learning.</p>
+
           <span>MovieLens 100K · Educational portfolio project</span>
+
+          <span className="tmdb-attribution">
+            This product uses the TMDB API but is not endorsed or certified by
+            TMDB.
+          </span>
         </footer>
       </main>
     </div>

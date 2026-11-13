@@ -118,6 +118,7 @@ class RecommendationService:
             "movie_id": str(movie_id),
             "title": movie["title"],
             "genres": genres,
+            "poster_url": movie.get("poster_url"),
             "release_date": (
                 None
                 if pd.isna(movie["release_date"])
@@ -210,20 +211,18 @@ class RecommendationService:
             union = len(target_genres | candidate_genres)
             similarity = intersection / union if union else 0.0
 
-            scores.append((candidate_id, similarity))
-
-        scores.sort(key=lambda item: item[1], reverse=True)
-
-        results = []
-        for candidate_id, score in scores[:limit]:
-            movie = self._movie_response(candidate_id)
-            if movie:
-                results.append({
-                    **movie,
-                    "similarity": round(score, 4),
+            if similarity > 0:
+                scores.append({
+                    "movie_id": int(candidate_id),
+                    "similarity": round(similarity, 4),
                 })
 
-        return results
+        scores.sort(
+            key=lambda item: item["similarity"],
+            reverse=True,
+        )
+
+        return scores[:limit]
 
 
 service = RecommendationService()

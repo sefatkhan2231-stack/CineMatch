@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://cinematch-nk0m.onrender.com/";
+  import.meta.env.VITE_API_BASE_URL || "https://cinematch-nk0m.onrender.com";
 
 const TOKEN_KEY = "cinematch_access_token";
 

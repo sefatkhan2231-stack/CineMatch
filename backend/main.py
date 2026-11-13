@@ -52,8 +52,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cine-match-henna.vercel.app/",
-        "https://cine-match-henna.vercel.app/",
+        "https://cine-match-henna.vercel.app",
+        "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],

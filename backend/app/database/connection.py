@@ -1,16 +1,26 @@
+
 import os
 
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-load_dotenv()
-
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is missing. Check the .env file in your project root."
+    raise ValueError("DATABASE_URL is not configured")
+
+# Support Render PostgreSQL URLs with Psycopg 3
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://",
+        "postgresql+psycopg://",
+        1,
+    )
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgresql://",
+        "postgresql+psycopg://",
+        1,
     )
 
 engine = create_engine(
@@ -19,16 +29,15 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
     autocommit=False,
+    autoflush=False,
+    bind=engine,
 )
 
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
+
 
 def get_db():
-
     db = SessionLocal()
     try:
         yield db

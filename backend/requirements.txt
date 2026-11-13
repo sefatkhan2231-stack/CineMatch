@@ -8,3 +8,4 @@ joblib==1.6.0
 sqlalchemy
 psycopg[binary]
 python-dotenv
+pydantic[email]

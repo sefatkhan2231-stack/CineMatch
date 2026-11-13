@@ -5,34 +5,34 @@ from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from sqlalchemy.orm import Session
 
-from backend.app.services.recommendation_service import service
-from backend.app.database.connection import get_db
-from backend.app.services.movie_service import (
+from app.services.recommendation_service import service
+from app.database.connection import get_db
+from app.services.movie_service import (
     search_movies_db,
     get_movie_db,
 )
-from backend.app.services.personalized_recommendation_service import (
+from app.services.personalized_recommendation_service import (
     get_personalized_recommendations,
     build_popularity_lookup,
 )
-from backend.app.schemas.rating import RatingCreate
-from backend.app.services.rating_service import (
+from app.schemas.rating import RatingCreate
+from app.services.rating_service import (
     submit_rating,
     get_user_ratings,
     delete_rating,
 )
 
-from backend.app.services.watchlist_service import (
+from app.services.watchlist_service import (
     add_to_watchlist,
     get_watchlist,
     remove_from_watchlist,
 )
 
-from backend.app.schemas.auth import UserRegister, UserLogin
-from backend.app.services.auth_service import register_user, login_user
+from app.schemas.auth import UserRegister, UserLogin
+from app.services.auth_service import register_user, login_user
 
-from backend.app.core.dependencies import get_current_user
-from backend.app.database.models import Movie, User
+from app.core.dependencies import get_current_user
+from app.database.models import Movie, User
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_DIR = PROJECT_ROOT / "ml" / "artifacts"

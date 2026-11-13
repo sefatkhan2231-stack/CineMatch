@@ -14,8 +14,8 @@ from requests.adapters import HTTPAdapter
 from sqlalchemy import select
 from urllib3.util.retry import Retry
 
-from backend.app.database.connection import SessionLocal
-from backend.app.database.models import Movie
+from app.database.connection import SessionLocal
+from app.database.models import Movie
 
 
 # --------------------------------------------------

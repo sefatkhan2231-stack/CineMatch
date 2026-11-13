@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.database.models import User, Movie, Watchlist
-from backend.app.services.movie_service import formate_movie
+from app.database.models import User, Movie, Watchlist
+from app.services.movie_service import formate_movie
 
 def add_to_watchlist(
         db: Session,

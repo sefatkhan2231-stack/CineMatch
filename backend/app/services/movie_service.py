@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.database.models import Movie
+from app.database.models import Movie
 
 def formate_movie(movie: Movie) -> dict:
     return {

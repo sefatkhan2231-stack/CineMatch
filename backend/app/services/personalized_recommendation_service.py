@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.database.models import Rating, User, Movie
+from app.database.models import Rating, User, Movie
 
 def get_user_rating_history(
         db: Session,

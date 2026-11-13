@@ -6,11 +6,11 @@ from fastapi import HTTPException, status
 from jwt.exceptions import InvalidTokenError
 from sqlalchemy.orm import Session
 
-from backend.app.database.models import User
+from app.database.models import User
 
 import jwt
 
-from backend.app.core.config import (
+from app.core.config import (
     JWT_SECRET_KEY,
     JWT_ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,

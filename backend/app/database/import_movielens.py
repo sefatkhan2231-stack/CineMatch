@@ -4,8 +4,8 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import text
 
-from backend.app.database.connection import SessionLocal
-from backend.app.database.models import Movie, MovieLensRating
+from app.database.connection import SessionLocal
+from app.database.models import Movie, MovieLensRating
 
 
 # --------------------------------------------------

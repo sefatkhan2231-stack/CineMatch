@@ -1,4 +1,4 @@
-from backend.app.ml.fetch_movie_posters import (
+from app.ml.fetch_movie_posters import (
     build_session,
     get_search_titles,
     search_tmdb,
@@ -6,8 +6,8 @@ from backend.app.ml.fetch_movie_posters import (
     extract_year,
 )
 
-from backend.app.database.connection import SessionLocal
-from backend.app.database.models import Movie
+from app.database.connection import SessionLocal
+from app.database.models import Movie
 from sqlalchemy import select
 
 

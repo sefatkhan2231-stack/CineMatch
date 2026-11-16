@@ -14,19 +14,16 @@ Built with **React, FastAPI, PostgreSQL, and Machine Learning**, CineMatch combi
 ## 📸 Screenshots
 
 ### Home Page
-![Home Page](screenshots/home.png)
+![Home Page](screenshots/cinematch-home.png)
 
-### Movie Search
-![Movie Search](screenshots/search.png)
+### Login Page
+![Movie Search](screenshots/cinematch-login.png)
 
-### Personalized Recommendations
-![Recommendations](screenshots/recommendations.png)
+### Movie rating Page
+![Recommendations](screenshots/cinematch-movie-rating.png)
 
-### Movie Detail Page
-![Movie Detail](screenshots/movie-detail.png)
-
-### Watchlist
-![Watchlist](screenshots/watchlist.png)
+### Profile Page
+![Movie Detail](screenshots/cinematch-profile.png)
 
 ## ✨ Features
 

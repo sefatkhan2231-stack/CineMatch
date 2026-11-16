@@ -1,4 +1,3 @@
-
 # 🎬 CineMatch — Movie Recommendation System
 
 **Discover your next favorite movie with personalized recommendations.**
